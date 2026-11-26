@@ -1,0 +1,7 @@
+.lasna-wallet/
+.foundry-local/
+.env
+.env.*
+out/
+cache/
+broadcast/

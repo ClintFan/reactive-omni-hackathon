@@ -1,0 +1,17 @@
+[profile.default]
+src = "src"
+test = "test"
+libs = ["lib"]
+solc_version = "0.8.29"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 1
+via_ir = true
+bytecode_hash = "none"
+cbor_metadata = false
+# Vendored from https://github.com/Reactive-Network/reactive-lib-omni/releases/tag/v0.1.0
+remappings = ["@reactive/=lib/reactive-lib-omni/"]
+
+[rpc_endpoints]
+lasna = "https://lasna-rpc.rnk.dev/"
+sepolia = "https://ethereum-sepolia-rpc.publicnode.com"

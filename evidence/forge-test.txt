@@ -1,0 +1,24 @@
+$ forge test --use .foundry-local/bin/solc --offline
+Compiling 1 files with Solc 0.8.29
+Solc 0.8.29 finished in 719.80ms
+Compiler run successful!
+
+Ran 7 tests for test/GuardedSepoliaPayout.t.sol:GuardedSepoliaPayoutTest
+[PASS] testDestinationFailureRollsBackPayoutButKeepsSourceRequest() (gas: 415108)
+[PASS] testEnforcesPerPayoutAndLifetimeLimits() (gas: 422554)
+[PASS] testMatchingTransferPaysOnceAcrossBothChains() (gas: 338694)
+[PASS] testOnlyDeployerCanActivateAndReceiverIsFixed() (gas: 588059)
+[PASS] testOnlySystemAndAuthenticatedProxyCanExecute() (gas: 27645)
+[PASS] testRejectedRequestDoesNotConsumeBudgetOrEvent() (gas: 299801)
+[PASS] testRejectsWrongOriginAndTransferParticipants() (gas: 34946)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 4.29ms (4.21ms CPU time)
+
+Ran 5 tests for test/SepoliaTransferMonitor.t.sol:SepoliaTransferMonitorTest
+[PASS] testConstructorRequiresFunding() (gas: 36111)
+[PASS] testFirstTransferEmitsEvidenceAndUnsubscribesOnce() (gas: 297111)
+[PASS] testFundedConstructorSubscribesOnce() (gas: 265649)
+[PASS] testIgnoresUnmatchedAndMalformedLogs() (gas: 278863)
+[PASS] testOnlySystemMayReact() (gas: 267015)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 4.35ms (4.20ms CPU time)
+
+Ran 2 test suites in 8.38ms (8.63ms CPU time): 12 tests passed, 0 failed, 0 skipped (12 total tests)
