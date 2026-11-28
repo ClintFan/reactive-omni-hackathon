@@ -1,32 +1,26 @@
-# 项目方向卡｜Sepolia USDC 自动配捐
+# 项目方向卡｜跨链价差套利
 
 ## 一句话
 
-监听 Ethereum Sepolia 上测试 USDC 合约的 `Transfer` 事件，当指定捐款钱包向固定收款地址转入正数金额、单笔与累计申请额均在预算内且该事件尚未处理时，由 Lasna 请求回调，让 Sepolia 上预存测试 USDC 的配捐合约向同一收款地址支付等额款项。
+监听 Base Sepolia 和 Unichain Sepolia 上同一对测试代币的两个流动性池发出的 `Swap` 事件，当两边报价仍在有效期内、同一交易量的预计净收益超过设定门槛时，由 Lasna 分别请求回调，在报价较低的池买入、在报价较高的池卖出。
 
 ## 赛道
 
-**2 · Set It and Forget It（个人自动化）**。配捐人设定捐款钱包、收款地址、单笔上限和总预算，预存配捐资金并启用规则，之后符合条件的捐款会自动触发配捐。
+**1 · Every Second Counts**。新的交换交易会改变池内报价，其他交易者可能在接下来的几个区块内抹平价差。反应慢几秒，就可能失去原本足以覆盖手续费和滑点的机会，或只能成交其中一边。Demo 会从触发价差的源链交易开始，分别记录两边回调成交的时间，以较晚一边成交为完整执行的终点。用同一组受控价格变动做即时执行和延迟几秒的对照，比较两边的成交情况与净收益。
 
 ## 目标用户和真实场景
 
-目标用户是为社区募捐提供等额配捐的个人赞助人。例如，一位赞助人承诺为某个开源社区的募捐活动配捐，在活动开始前约定捐款钱包、收款地址和预算。目前可以在区块浏览器逐笔核对转账，在表格里记录已配捐金额，再手动签名付款。也可以自己运行监听脚本，持续检查交易、保存处理进度并管理付款钱包。项目将筛选、限额和去重交给合约。
+目标用户是已经在两条链上持有库存、希望捕捉同一资产短暂价差的 DEX 交易者。例如，一笔大额交换拉高其中一个池的报价，交易者可以在另一条链低价买入，同时用高价链上的现有库存卖出。现有做法通常是自建机器人，持续读取两条链的报价、计算成本，并用两个钱包发送交易、跟踪回执。
 
 ## 第 2 周最小 Demo
 
-跑通 **Ethereum Sepolia → Reactive Lasna → Ethereum Sepolia**：
+在 Base Sepolia 和 Unichain Sepolia 各准备一个测试池，使用同一对测试代币和固定交易量，两边预先备好交易库存。
 
-1. 指定捐款钱包向固定收款地址转入 **0.01 测试 USDC**，源交易发出 `Transfer`。
-2. Lasna 的 `GuardedSepoliaPayout` 在带 `onlySystem` 的 `react()` 中检查地址、金额、预算与事件 ID，调用 `SYSTEM.requestCallbackV_1_0()`。
-3. Sepolia 回调代理调用 `SepoliaPayoutReceiver.executePayout()`。接收合约验证代理和授权的 Lasna 合约，从预存余额向同一收款地址再转 **0.01 测试 USDC**，并记录 `PayoutExecuted`。
+1. 通过一笔测试交换制造价差。Lasna 合约在带 `onlySystem` 的 `react()` 中接收两个池的 `Swap` 日志，检查报价时效，并根据固定交易量估算买卖金额。报价计入池手续费和价格冲击，再扣除折算成计价代币的执行费用估算。
+2. 预计净收益超过门槛时，Lasna 通过 `SYSTEM.requestCallbackV_1_0()` 分别请求两边的回调。两端执行合约验证回调代理和授权的 Lasna 合约，并在成交时分别检查买入的最高支出与卖出的最低收入。
+3. 验收一次两边都成交的测试，用同一套利编号串起源链日志、Lasna 请求和两笔目标链成交回执。记录两边实际成交金额、费用和端到端延迟。两笔交易分别结算，若只有一边成交，记录该结果及剩余持仓。
 
-验收时用同一事件 ID 串起源日志、Lasna 回调请求和目标付款日志，并确认源转账与配捐合计到账 **0.02 测试 USDC**。仓库已记录一组测试网回执：
-
-- [源链捐款交易](https://sepolia.etherscan.io/tx/0x12bec47113c865c838f2f3768f679575e3e4f4396d12a584a6050eb48897f37a)
-- [Lasna 回调请求交易](https://lasna.reactscan.net/tx/0xcb1d6e2ef639709c97302533204658f4c88dbc3823c41371413653560c0fafbb)
-- [目标链配捐交易](https://sepolia.etherscan.io/tx/0x82353d6d6ffc605cd5ef4e44c82ae118da63aa0cad604bc5f29547f85178c624)
-
-[合约源码](../src/GuardedSepoliaPayout.sol) · [Omni 回调请求](https://dev.reactive.network/reactive-contracts#requesting-callbacks) · [回调鉴权](https://dev.reactive.network/callback-contracts#authorizing-callbacks)
+[Omni 回调请求](https://dev.reactive.network/reactive-contracts#requesting-callbacks) · [回调鉴权](https://dev.reactive.network/callback-contracts#authorizing-callbacks)
 
 ## 参赛方式
 
