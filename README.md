@@ -32,7 +32,7 @@ forge test
 
 ### 第一条完整链路
 
-用一笔 0.01 测试 USDC 捐款触发一笔等额配捐。源链和目标链均为 Ethereum Sepolia，判断在 Lasna 执行。Lasna 合约已部署，Sepolia 接收合约部署和三笔业务交易待完成。
+2026 年 11 月 28 日，Ethereum Sepolia 上的一笔 0.01 测试 USDC 捐款触发了 Lasna 的配捐判断，随后 Sepolia 接收合约向同一收款钱包支付了 0.01 测试 USDC。
 
 ```mermaid
 sequenceDiagram
@@ -57,16 +57,16 @@ sequenceDiagram
 | --- | --- |
 | 募捐钱包 | `0xAcF2cde557949A9189E304D9f255486F2997b55d` |
 | 收款钱包 | `0x36183F4A182aB53d6EBD3B6039408a325A6DF986` |
-| Lasna 合约 | `0x9cE32B963cAeA9437B96aC911a3e3b6C1Abf254F` |
-| Lasna 部署 | [成功回执](https://lasna.reactscan.net/tx/0xa9c918121240fd50e8ed645eef8f986b37499efa764975bf390c721903f9299e)，手续费余额 0.04 lREACT |
+| Lasna 配捐合约 | `0x632fd45BBEF8Dcc04792b46760dcE664f6C2cB6A` · [部署交易](https://lasna.reactscan.net/tx/0x2b03765dafda34105953102b419fe0524ea1864a4dc3fca0f7aabc1b43d9fafe) |
+| Sepolia 接收合约 | `0x9cE32B963cAeA9437B96aC911a3e3b6C1Abf254F` · [部署交易](https://sepolia.etherscan.io/tx/0x3e247801891b3039e65104bd1779377c4832952380579bd96fcbe8d2622cd472) |
 | Ethereum Sepolia 回调代理 | `0xAa14d9Cd0f788Ca23d11805986C1d8bd035D23b4`，已通过 Sepolia RPC 核验链上代码 |
-| ① 源链交易 | 待发出 Sepolia USDC 转账 |
-| ② Reactive 交易 | 待生成 Lasna `CallbackRequest` |
-| ③ 目标链交易 | 待生成 Sepolia `PayoutExecuted` |
+| ① 源链交易 | [Sepolia · USDC 捐款](https://sepolia.etherscan.io/tx/0x12bec47113c865c838f2f3768f679575e3e4f4396d12a584a6050eb48897f37a) · `Transfer` 0.01 USDC |
+| ② Reactive 交易 | [Lasna · 配捐判断](https://lasna.reactscan.net/tx/0xcb1d6e2ef639709c97302533204658f4c88dbc3823c41371413653560c0fafbb) · `CallbackRequest` |
+| ③ 目标链交易 | [Sepolia · 配捐到账](https://sepolia.etherscan.io/tx/0x82353d6d6ffc605cd5ef4e44c82ae118da63aa0cad604bc5f29547f85178c624) · `PayoutExecuted` 和接收合约发出的 0.01 USDC `Transfer` |
 
-本次部署的单笔和总上限均为 `10000`（0.01 测试 USDC），刚好够完成一次配捐。需要为募捐钱包准备 Sepolia ETH 和 0.02 测试 USDC，其中 0.01 用于为接收合约备款，另 0.01 用于触发捐款。Lasna 合约已存有 lREACT，领取的 Sepolia ETH 可留作接收合约部署和回调手续费。
+三笔交易以事件 ID `0xbf94c52af88ebca8ec90843be16e1134176a9618bd6aea2446c86878635a85ab` 串联。用源链 ID `11155111`、源交易哈希和 `Transfer` 日志索引 `89` 计算该 ID。Lasna `CallbackRequest` 的回调参数和 Sepolia `PayoutExecuted` 日志都包含该 ID。
 
-验收时用源交易的 `Transfer` 日志索引和交易哈希，再加上链 ID `11155111` 计算事件 ID。Lasna 的 `CallbackRequest` 里应包含相同的事件 ID。用 `getCallbacks(reactiveTxHash)` 查目标交易哈希，并确认该交易包含同一事件 ID 的 `PayoutExecuted` 和接收合约发出的 USDC `Transfer`。 [Omni 回调查询](https://dev.reactive.network/economy#inspecting-callbacks)
+本次部署将单笔和总上限都设为 `10000`（0.01 测试 USDC）。首次尝试中，回调 gas 上限为 300,000，代理扣除开销后，接收合约调用 USDC `transfer()` 时耗尽 gas。修正版将回调上限提高到 1,000,000，上表记录的是修正版跑通的链路。 [首次回调回执](https://sepolia.etherscan.io/tx/0x52ebfde2e055e7ad6a00f55c5613e33be4f45b1bbf152746ed3fad152bfc0445) · [Omni 回调 gas 说明](https://dev.reactive.network/economy#gas-limits)
 
 ### 出问题怎么办
 

@@ -33,7 +33,8 @@ abstract contract PayoutLimits {
 contract GuardedSepoliaPayout is AbstractReactive, PayoutLimits {
     uint256 private constant SEPOLIA = 11155111;
     uint256 private constant TRANSFER = uint256(keccak256("Transfer(address,address,uint256)"));
-    uint64 private constant CALLBACK_GAS_LIMIT = 300_000;
+    // Leave room for the Sepolia proxy's overhead and the USDC proxy transfer.
+    uint64 private constant CALLBACK_GAS_LIMIT = 1_000_000;
 
     address public immutable deployer;
     address public immutable watchedSender;

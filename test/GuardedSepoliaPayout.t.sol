@@ -93,7 +93,7 @@ contract GuardedSepoliaPayoutTest {
         require(automation.requestedTotal() == PER_PAYOUT, "wrong requested amount");
         ISystemContract.CallbackConfiguration_V_1_0 memory config = system.latest();
         require(config.chainId == SEPOLIA && config.recipient == address(receiver), "wrong callback destination");
-        require(config.gasLimit == 300_000, "wrong callback gas limit");
+        require(config.gasLimit == 1_000_000, "wrong callback gas limit");
         require(
             keccak256(config.payload)
                 == keccak256(abi.encodeCall(SepoliaPayoutReceiver.executePayout, (address(0), eventId, PER_PAYOUT))),
