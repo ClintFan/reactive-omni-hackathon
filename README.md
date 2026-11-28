@@ -59,11 +59,12 @@ sequenceDiagram
 | 收款钱包 | `0x36183F4A182aB53d6EBD3B6039408a325A6DF986` |
 | Lasna 合约 | `0x9cE32B963cAeA9437B96aC911a3e3b6C1Abf254F` |
 | Lasna 部署 | [成功回执](https://lasna.reactscan.net/tx/0xa9c918121240fd50e8ed645eef8f986b37499efa764975bf390c721903f9299e)，手续费余额 0.04 lREACT |
+| Ethereum Sepolia 回调代理 | `0xAa14d9Cd0f788Ca23d11805986C1d8bd035D23b4`，已通过 Sepolia RPC 核验链上代码 |
 | ① 源链交易 | 待发出 Sepolia USDC 转账 |
 | ② Reactive 交易 | 待生成 Lasna `CallbackRequest` |
 | ③ 目标链交易 | 待生成 Sepolia `PayoutExecuted` |
 
-本次部署的单笔和总上限均为 `10000`（0.01 测试 USDC），刚好够完成一次配捐。需要为募捐钱包准备 Sepolia ETH 和 0.02 测试 USDC，其中 0.01 用于为接收合约备款，另 0.01 用于触发捐款。接收合约构造时需要公开 Sepolia 上有效的 Omni 回调代理地址。
+本次部署的单笔和总上限均为 `10000`（0.01 测试 USDC），刚好够完成一次配捐。需要为募捐钱包准备 Sepolia ETH 和 0.02 测试 USDC，其中 0.01 用于为接收合约备款，另 0.01 用于触发捐款。Lasna 合约已存有 lREACT，领取的 Sepolia ETH 可留作接收合约部署和回调手续费。
 
 验收时用源交易的 `Transfer` 日志索引和交易哈希，再加上链 ID `11155111` 计算事件 ID。Lasna 的 `CallbackRequest` 里应包含相同的事件 ID。用 `getCallbacks(reactiveTxHash)` 查目标交易哈希，并确认该交易包含同一事件 ID 的 `PayoutExecuted` 和接收合约发出的 USDC `Transfer`。 [Omni 回调查询](https://dev.reactive.network/economy#inspecting-callbacks)
 
