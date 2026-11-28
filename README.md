@@ -30,6 +30,43 @@ forge test
 
 [Foundry 测试](test/GuardedSepoliaPayout.t.sol)覆盖正常付款、重复投递、触发条件、两项金额上限和回调失败回滚。
 
+### 第一条完整链路
+
+用一笔 0.01 测试 USDC 捐款触发一笔等额配捐。源链和目标链均为 Ethereum Sepolia，判断在 Lasna 执行。Lasna 合约已部署，Sepolia 接收合约部署和三笔业务交易待完成。
+
+```mermaid
+sequenceDiagram
+    actor Donor as 捐款钱包
+    participant USDC as Sepolia · 测试 USDC
+    participant System as Lasna · 系统合约
+    participant Reactive as Lasna · GuardedSepoliaPayout
+    participant Proxy as Sepolia · 回调代理
+    participant Receiver as Sepolia · SepoliaPayoutReceiver
+
+    Donor->>USDC: 转 0.01 USDC 给收款钱包
+    Note over Donor,USDC: ① 源交易产生 Transfer
+    System->>Reactive: 投递 Transfer，调用 react()
+    Note over System,Reactive: ② 检查参与方、配捐额度和事件 ID
+    Reactive->>System: requestCallbackV_1_0()
+    Proxy->>Receiver: ③ executePayout()
+    Receiver->>USDC: 再转 0.01 USDC 给同一收款钱包
+    Note over Proxy,Receiver: 回执包含 PayoutExecuted
+```
+
+| 项目 | 测试网记录 |
+| --- | --- |
+| 募捐钱包 | `0xAcF2cde557949A9189E304D9f255486F2997b55d` |
+| 收款钱包 | `0x36183F4A182aB53d6EBD3B6039408a325A6DF986` |
+| Lasna 合约 | `0x9cE32B963cAeA9437B96aC911a3e3b6C1Abf254F` |
+| Lasna 部署 | [成功回执](https://lasna.reactscan.net/tx/0xa9c918121240fd50e8ed645eef8f986b37499efa764975bf390c721903f9299e)，手续费余额 0.04 lREACT |
+| ① 源链交易 | 待发出 Sepolia USDC 转账 |
+| ② Reactive 交易 | 待生成 Lasna `CallbackRequest` |
+| ③ 目标链交易 | 待生成 Sepolia `PayoutExecuted` |
+
+本次部署的单笔和总上限均为 `10000`（0.01 测试 USDC），刚好够完成一次配捐。需要为募捐钱包准备 Sepolia ETH 和 0.02 测试 USDC，其中 0.01 用于为接收合约备款，另 0.01 用于触发捐款。接收合约构造时需要公开 Sepolia 上有效的 Omni 回调代理地址。
+
+验收时用源交易的 `Transfer` 日志索引和交易哈希，再加上链 ID `11155111` 计算事件 ID。Lasna 的 `CallbackRequest` 里应包含相同的事件 ID。用 `getCallbacks(reactiveTxHash)` 查目标交易哈希，并确认该交易包含同一事件 ID 的 `PayoutExecuted` 和接收合约发出的 USDC `Transfer`。 [Omni 回调查询](https://dev.reactive.network/economy#inspecting-callbacks)
+
 ### 出问题怎么办
 
 - **手续费耗尽。** 预付额度和合约余额不足以付费并产生欠费时，Lasna 系统合约会自动停止投递源事件，Sepolia 回调代理也会对欠费的接收合约暂停投递。用 Lasna 系统合约的 `depositTo(reactiveAddress)` 充 lREACT，或用 Sepolia 回调代理的 `depositTo(receiverAddress)` 充 ETH。到对应链查 `debt(address)`，欠费归零即恢复服务。 [Omni 充值与欠费说明](https://dev.reactive.network/economy)
